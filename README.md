@@ -1,79 +1,100 @@
-# 🧠 Retrieval-Augmented Generation (RAG) Pipeline
+<p align="center">
+  <img src="assets/rag_banner.png" alt="RAG Pipeline Banner" width="100%" style="border-radius: 8px; margin-bottom: 20px;"/>
+</p>
 
-[![Python Version](https://img.shields.io/badge/Python-3.12%2B-blue.svg?style=flat-square&logo=python)](https://www.python.org/)
+# 🧠 Production-Ready Modular RAG & Vectorless Reasoning Pipeline
+
+[![Python Version](https://img.shields.io/badge/Python-3.12%2B-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
 [![LangChain](https://img.shields.io/badge/LangChain-1.3%2B-orange.svg?style=flat-square)](https://github.com/langchain-ai/langchain)
 [![FAISS](https://img.shields.io/badge/Vector%20DB-FAISS-green.svg?style=flat-square)](https://github.com/facebookresearch/faiss)
 [![LLM Provider](https://img.shields.io/badge/LLM-Groq-red.svg?style=flat-square)](https://groq.com/)
+[![PageIndex](https://img.shields.io/badge/PageIndex-Vectorless%20RAG-purple.svg?style=flat-square)](https://pageindex.ai/)
 [![License](https://img.shields.io/badge/license-MIT-lightgrey.svg?style=flat-square)](LICENSE)
 
-A production-ready, modular **Retrieval-Augmented Generation (RAG)** pipeline designed to ingest, chunk, embed, index, and query various document types. The project integrates local sentence embeddings and vector search with state-of-the-art LLMs accessed via the Groq API to provide context-aware, summarized answers to user queries.
+A clean, modular, and high-performance **Retrieval-Augmented Generation (RAG)** toolkit. This repository contains both traditional Vector-based RAG implementations (using FAISS, local Sentence Transformers, and Groq-hosted LLMs) and next-generation, structure-aware **Vectorless RAG** engines (using PageIndex). It is designed to act as a production blueprint for document parsing, indexing, semantic querying, and synthesis.
 
 ---
 
-## 🗺️ Architecture Overview
+## 🗺️ Architectural Paradigm
 
-The system uses a standard RAG pattern, dividing operations into two key phases: **Ingestion & Indexing** and **Query & Generation**.
+This repository provides three distinct pipelines tailored for different search and retrieval demands:
 
 ```mermaid
 flowchart TD
-    subgraph Ingestion & Indexing
-        A[Raw Documents<br/>PDF, TXT, CSV, Word, Excel, JSON] --> B[data_loader.py<br/>Langchain Document Loaders]
-        B --> C[embedding.py<br/>RecursiveCharacterTextSplitter]
-        C --> D[embedding.py<br/>SentenceTransformer]
-        D --> E[vectorstore.py<br/>FaissVectorStore]
-        E -->|Persist Index & Metadata| F[(faiss_store/)]
+    subgraph Data Ingestion
+        A[Raw Documents<br/>PDF, TXT, CSV, DOCX, XLSX, JSON] --> B[data_loader.py<br/>Unified File Parser]
     end
 
-    subgraph Query & Generation
-        G[User Query] --> H[search.py<br/>RAGSearch Engine]
-        F -->|Load Index| H
-        H -->|1. Vector Similarity Search| E
-        E -->|2. Retrieve top-k context| H
-        H -->|3. Construct Prompt with Context| I[Groq ChatGroq LLM<br/>qwen/qwen3-32b]
-        I -->|4. Generate Response| J[Structured Summary / Answer]
+    subgraph Pipeline 1: Traditional Vector RAG
+        B --> C1[embedding.py<br/>Recursive Text Splitter]
+        C1 --> C2[Local Embedding Generator<br/>all-MiniLM-L6-v2]
+        C2 --> C3[vectorstore.py<br/>FAISS L2 Flat Index]
+        C3 -->|Persist Index & Metadata| D1[(faiss_store/)]
+        D1 -->|Semantic Similarity Query| E1[search.py<br/>RAG Search Orchestrator]
     end
 
-    style Ingestion & Indexing fill:#eef2f7,stroke:#3b5998,stroke-width:2px
-    style Query & Generation fill:#fdf6ec,stroke:#e6a23c,stroke-width:2px
-    style F fill:#f0f9eb,stroke:#67c23a,stroke-width:2px
-    style J fill:#fef0f0,stroke:#f56c6c,stroke-width:2px
+    subgraph Pipeline 2: Vectorless Structure RAG
+        B --> F1[PageIndex API Client]
+        F1 -->|Hierarchical Indexing| F2[Document Tree Index]
+        F2 -->|LLM Structure Reasoning| E2[LLM Tree Search]
+    end
+
+    subgraph Pipeline 3: Hybrid Search Sandbox
+        B --> G1[Typesense Cloud Client]
+        G1 -->|Full-text + Vectors| G2[Hybrid Search Collection]
+    end
+
+    E1 --> H[Groq Chat Inference Engine<br/>qwen-32b / llama-3.3-70b]
+    E2 --> H
+    G2 --> H
+    H --> I[Context-Aware Synthesized Answer]
+
+    style Data Ingestion fill:#eef2f7,stroke:#3b5998,stroke-width:2px
+    style Pipeline 1: Traditional Vector RAG fill:#fdf6ec,stroke:#e6a23c,stroke-width:2px
+    style Pipeline 2: Vectorless Structure RAG fill:#f0f9eb,stroke:#67c23a,stroke-width:2px
+    style Pipeline 3: Hybrid Search Sandbox fill:#f5f0f9,stroke:#9c27b0,stroke-width:2px
+    style H fill:#fef0f0,stroke:#f56c6c,stroke-width:2px
+    style I fill:#e6f9ff,stroke:#00bcd4,stroke-width:2px
 ```
 
 ---
 
-## ✨ Features
+## ✨ Core Features
 
-- **Multi-Format Document Ingestion**: Seamlessly load and process **PDF**, **TXT**, **CSV**, **Excel** (`.xlsx`), **Word** (`.docx`), and **JSON** files using LangChain loaders.
-- **Semantic Text Chunking**: Utilizes `RecursiveCharacterTextSplitter` with optimal paragraph/sentence separators and configured chunk overlap to preserve document context boundaries.
-- **Local Embedding Generation**: Computes embeddings locally using HuggingFace's `sentence-transformers` library (specifically optimized with `all-MiniLM-L6-v2` for speed and accuracy).
-- **Fast Similarity Search**: Employs **FAISS** (Facebook AI Similarity Search) to index vector representations and perform rapid L2 similarity queries.
-- **Groq LLM Synthesis**: Connects to the Groq API via `ChatGroq` (using Qwen-32B or other high-performance models) to synthesize retrieved documents and produce concise summaries.
-- **Experimental Playgrounds**: Contains interactive Jupyter Notebooks for testing alternative databases (such as **Typesense**) and tracking data ingestion experiments.
+*   **Multi-Format Document Parsing**: Out-of-the-box loading and layout extraction for **PDF**, **TXT**, **CSV**, **Excel** (`.xlsx`), **Word** (`.docx`), and **JSON** files via LangChain's unified loaders.
+*   **Semantic Text Chunking**: Context-preserved splitting using `RecursiveCharacterTextSplitter` configured with overlapping chunk boundaries to prevent loss of context.
+*   **Local Embedding Pipelines**: Locally computed semantic embeddings using the highly optimized HuggingFace `sentence-transformers` library (default: `all-MiniLM-L6-v2`, yielding 384-dimensional dense vectors).
+*   **FAISS Vector Storage**: Lightweight, low-overhead index persistence and fast $L^2$ similarity querying via CPU-optimized **FAISS**.
+*   **Groq API Orchestration**: Dynamic prompt-assembly and token-efficient response synthesis using Groq's high-speed inference engine (running advanced open models like Qwen-32B or Llama-3).
+*   **Vectorless RAG Integration (PageIndex)**: A reasoning-centric pipeline that models files as hierarchical trees (e.g., chapters, tables, sections) rather than raw token lists, eliminating chunking noise and embedding drift.
+*   **Typesense Hybrid Indexing**: A robust sandbox configuration for hybrid keyword + vector indexing in high-concurrency environments.
 
 ---
 
 ## 📂 Project Structure
 
 ```directory
-├── Data/                       # Source document files for ingestion
-│   ├── pdf/                    # PDF files (e.g., C Programming, Distributed Systems)
-│   ├── text_files/             # Plaintext files (e.g., Machine Learning, Python guides)
-│   └── VectorStore/            # (Optional) Pre-computed vector indices
-├── NoteBook/                   # Jupyter Notebooks for analysis & prototyping
-│   ├── document.ipynb          # Step-by-step data ingestion flow
-│   └── pdf_loader.ipynb        # In-depth PDF loading and splitting tests
-├── src/                        # Core Application Source Code
-│   ├── __init__.py             # Module initialization
-│   ├── data_loader.py          # Unified data loaders for multiple formats
-│   ├── embedding.py            # Recursive chunking & sentence embeddings pipeline
-│   ├── search.py               # Main RAG querying and Groq LLM orchestration
-│   └── vectorstore.py          # FAISS index persistence, management, and similarity search
-├── app.py                      # Main entrypoint script for RAG execution
-├── main.py                     # Project entrypoint utility
+├── Data/                       # Ingestion source directory
+│   ├── pdf/                    # Multi-page raw PDF documents
+│   ├── text_files/             # Plaintext guidelines and logs
+│   └── VectorStore/            # Vector store database targets
+├── NoteBook/                   # Prototyping & interactive analysis
+│   ├── document.ipynb          # Step-by-step document load & chunk visualization
+│   └── pdf_loader.ipynb        # In-depth loader benchmark (PyPDF vs. PyMuPDF)
+├── src/                        # Core Python Application Package
+│   ├── __init__.py             # Namespace initialization
+│   ├── data_loader.py          # Multiclass document parsing pipeline
+│   ├── embedding.py            # Chunker and local Transformer encoder
+│   ├── search.py               # Groq LLM executor and RAG prompt compiler
+│   └── vectorstore.py          # FAISS index builder, saver, and query interface
+├── assets/                     # Graphical visual aids & diagrams
+│   └── rag_banner.png          # Repository banner art
+├── app.py                      # Executable demonstration script (Vector RAG)
+├── main.py                     # Project CLI helper entrypoint
 ├── pyproject.toml              # Modern Python packaging configuration (uv/pep621 compatible)
-├── requirements.txt            # Python dependencies lists
-├── typesense.ipynb             # Experimental notebook exploring Typesense search engine integration
-└── .env                        # Local environment variables (API keys, etc.)
+├── requirements.txt            # Explicit dependency requirements manifest
+└── PageIndex_Vectorless_RAG.ipynb # Step-by-step tutorial on Reasoning-based Vectorless RAG
+└── typesense.ipynb             # Typesense Cloud vector indexing sandbox setup
 ```
 
 ---
@@ -82,112 +103,120 @@ flowchart TD
 
 ### 📋 Prerequisites
 
-- **Python 3.12+**
-- A **Groq API Key** (Get one from the [Groq Console](https://console.groq.com/))
-- (Optional) [uv](https://github.com/astral-sh/uv) - Fast Python package installer and resolver
+*   **Python 3.12+**
+*   A **Groq API Key** (obtainable from the [Groq Console](https://console.groq.com/))
+*   *(Optional)* A **PageIndex API Key** (obtainable from the [PageIndex Dashboard](https://dash.pageindex.ai/))
+*   *(Optional)* **uv**: Fast Python packaging tool (recommended for quick setups)
+
+### ⚙️ Installation & Environment Setup
+
+#### Option A: Using `uv` (Recommended)
+
+`uv` is extremely fast and manages dependencies cleanly:
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/RAG-Retrieval-Augmented-Generation.git
+cd RAG-Retrieval-Augmented-Generation
+
+# Create virtual environment and activate
+uv venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# Install dependencies directly from pyproject.toml
+uv pip install -r requirements.txt
+```
+
+#### Option B: Standard Python `venv`
+
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/RAG-Retrieval-Augmented-Generation.git
+cd RAG-Retrieval-Augmented-Generation
+
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+
+# Install requirements
+pip install -r requirements.txt
+```
+
+### 🔑 Configuration
+
+Create a `.env` file in the project root:
+
+```env
+GROQ_API_KEY="gsk_your_groq_api_key_goes_here"
+PAGEINDEX_API_KEY="pi-your_pageindex_api_key_goes_here"
+```
 
 ---
 
-### ⚙️ Installation
+## 💻 Programmatic Usage
 
-1. **Clone the Repository**:
-   ```bash
-   git clone https://github.com/yourusername/RAG-Retrieval-Augmented-Generation.git
-   cd RAG-Retrieval-Augmented-Generation
-   ```
+### 1. Unified Vector RAG Pipeline
 
-2. **Set up a Virtual Environment**:
-   - Using standard `venv`:
-     ```bash
-     python -m venv .venv
-     source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-     ```
-   - Using `uv` (recommended):
-     ```bash
-     uv venv
-     source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-     ```
-
-3. **Install Dependencies**:
-   - Using `pip`:
-     ```bash
-     pip install -r requirements.txt
-     ```
-   - Using `uv`:
-     ```bash
-     uv pip install -r requirements.txt
-     ```
-
-4. **Configure Environment Variables**:
-   Create a `.env` file in the root directory and add your Groq API key:
-   ```env
-   GROQ_API_KEY="your-groq-api-key-here"
-   ```
-
----
-
-## 💻 Usage
-
-### 1. Preparing Data
-Place your documents in the `Data/` folder (supported structures inside `Data/pdf/`, `Data/text_files/`, etc.). 
-
-### 2. Building the Index & Running Queries
-You can run the full RAG search pipeline using `app.py`:
+You can run the full standard pipeline locally by executing `app.py`:
 
 ```bash
 python app.py
 ```
 
-Inside `app.py`, the system:
-1. Resolves document paths under `Data/` and ingests all text.
-2. Chunk-splits the text and computes embedding vectors.
-3. Builds and persists the FAISS database index into a directory named `faiss_store/`.
-4. Executes similarity searches on FAISS and retrieves the most relevant paragraphs.
-5. Feeds the query + context to Groq to generate a final answer.
-
-### 📝 Example Usage snippet
+Under the hood, the system executes the following steps:
 
 ```python
 from src.data_loader import load_all_documents
 from src.vectorstore import FaissVectorStore
 from src.search import RAGSearch
 
-# 1. Ingest Documents
+# Step 1: Parse all files under Data/
 docs = load_all_documents("Data")
 
-# 2. Build and Save Vector Index
-store = FaissVectorStore("faiss_store")
+# Step 2: Initialize vector store and build index (automatically chunk & embed)
+store = FaissVectorStore(persist_dir="faiss_store")
 store.build_from_documents(docs)
 
-# 3. Initialize search engine and query
-rag_search = RAGSearch(persist_dir="faiss_store")
-query = "What are the types of Machine Learning?"
-summary = rag_search.search_and_summarize(query, top_k=3)
+# Step 3: Instantiate RAG executor with Groq Orchestration
+rag_search = RAGSearch(persist_dir="faiss_store", llm_model="qwen/qwen3-32b")
 
-print("Answer:", summary)
+# Step 4: Run similarity search and LLM synthesis
+query = "Explain key concepts of Distributed Systems"
+answer = rag_search.search_and_summarize(query, top_k=3)
+
+print(f"Synthesized Answer:\n{answer}")
 ```
 
----
+### 2. Sandbox Jupyter Playgrounds
 
-## 🛠️ Technologies & Libraries
+Explore experimental and structure-aware architectures in the interactive notebooks:
 
-- **LangChain & LangChain Community**: Orchestrates document loading, text splitting (`RecursiveCharacterTextSplitter`), and wrappers around the LLM.
-- **HuggingFace Sentence-Transformers**: Encodes text chunks into dense 384-dimensional vector representations locally.
-- **FAISS**: CPU-optimized vector indexing for lightning-fast similarity searching.
-- **ChatGroq**: Interfaces with Groq's high-speed inference engine to utilize state-of-the-art open-weights models (such as Qwen).
-- **PyMuPDF & PyPDF**: Extracts clean text layouts from complex PDF structures.
-- **Unstructured / Docx2txt / CSV**: Specialized tools to extract data from tables, word processing documents, and spreadsheets.
+*   **[PageIndex_Vectorless_RAG.ipynb](file:///Users/nishantsingh04/Documents/RAG-Retrieval-Augmented-Generation/PageIndex_Vectorless_RAG.ipynb)**: Complete guide on RAG without vector embeddings or arbitrary split boundaries. This workflow uploads documents to PageIndex, builds tree hierarchies, and retrieves matching blocks using LLM reasoning.
+*   **[typesense.ipynb](file:///Users/nishantsingh04/Documents/RAG-Retrieval-Augmented-Generation/typesense.ipynb)**: Detailed guide on configuring Typesense Cloud collections, ingesting structured data fields, and performing high-speed keyword-semantic hybrid searching.
+*   **[NoteBook/pdf_loader.ipynb](file:///Users/nishantsingh04/Documents/RAG-Retrieval-Augmented-Generation/NoteBook/pdf_loader.ipynb)**: In-depth benchmark comparative testing between PDF loaders (e.g., PyMuPDF vs. PyPDF).
 
 ---
 
-## 🧪 Experimental Notebooks
+## ⚙️ Advanced Customization
 
-- **[document.ipynb](file:///Users/nishantsingh04/Documents/RAG-Retrieval-Augmented%20Generation/NoteBook/document.ipynb)**: Walkthrough of data loading, document schemas, and parsing techniques.
-- **[pdf_loader.ipynb](file:///Users/nishantsingh04/Documents/RAG-Retrieval-Augmented%20Generation/NoteBook/pdf_loader.ipynb)**: Detailed tests comparing `PyPDFLoader` vs. `PyMuPDFLoader` chunk distributions.
-- **[typesense.ipynb](file:///Users/nishantsingh04/Documents/RAG-Retrieval-Augmented%20Generation/typesense.ipynb)**: Experiments on indexing metadata and searching documents via **Typesense Cloud**, providing an alternative to FAISS for full-text search combined with vector capabilities.
+### Tweaking Text Splitting
+You can change the chunk size and chunk overlap in the constructor of [EmbeddingPipeline](file:///Users/nishantsingh04/Documents/RAG-Retrieval-Augmented-Generation/src/embedding.py#L6):
+```python
+pipeline = EmbeddingPipeline(
+    model_name="all-MiniLM-L6-v2",
+    chunk_size=500,     # Adjust based on token density
+    chunk_overlap=50    # Adjust based on structural cohesion
+)
+```
+
+### Choosing Models
+The `RAGSearch` class supports standard Groq chat completions. You can pass alternative models like:
+*   `llama3-70b-8192` (Meta Llama 3)
+*   `mixtral-8x7b-32768` (Mistral AI)
+*   `qwen/qwen3-32b` (Qwen)
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This repository is distributed under the MIT License. See [LICENSE](LICENSE) for details.
